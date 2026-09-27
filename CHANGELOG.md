@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 — 2026-09-27
+
+- Add `agent-usage-pace` as an executable alias so the project name is discoverable through shell command completion.
+
 ## 0.1.0 — 2026-09-27
 
 - Combine Cursor, Claude Code, and Codex usage tracking under `usage-pace`.

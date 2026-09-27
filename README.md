@@ -31,6 +31,9 @@ pipx install git+https://github.com/ralfzosel/agent-usage-pace.git
 
 ## Usage
 
+Both `agent-usage-pace` and the shorter `usage-pace` run the same command.
+For example, `agent-usage-pace --all` shows all three providers.
+
 ```bash
 usage-pace                 # All three providers, live in an interactive terminal
 usage-pace --all            # Same as above
