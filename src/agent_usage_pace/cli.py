@@ -13,8 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from usage_pace import __version__
-from usage_pace.core import (
+from agent_usage_pace import __version__
+from agent_usage_pace.core import (
     DEFAULT_INTERVAL,
     DEFAULT_TOLERANCE,
     WINDOWS,
@@ -24,9 +24,9 @@ from usage_pace.core import (
     parse_instant,
     utc_now,
 )
-from usage_pace.providers import claude, codex, cursor
-from usage_pace.render import render_windows
-from usage_pace.terminal import wait_for_key_or_timeout
+from agent_usage_pace.providers import claude, codex, cursor
+from agent_usage_pace.render import render_windows
+from agent_usage_pace.terminal import wait_for_key_or_timeout
 
 PROVIDERS = {"cursor": cursor, "claude": claude, "codex": codex}
 TITLES = {"cursor": "Cursor", "claude": "Claude (shared with Claude apps)", "codex": "Codex"}
@@ -118,7 +118,8 @@ def run_live(states: dict[str, ProviderState], args: argparse.Namespace) -> None
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Compare coding-agent subscription usage with time elapsed."
+        prog="agent-usage-pace",
+        description="Compare coding-agent subscription usage with time elapsed.",
     )
     parser.add_argument(
         "provider", nargs="?", choices=PROVIDERS, help="provider to show (default: all)"
@@ -238,3 +239,8 @@ def claude_main() -> int:
 
 def codex_main() -> int:
     return main(["codex", *sys.argv[1:]])
+
+
+def legacy_main() -> int:
+    """Compatibility entry point for the original usage-pace command."""
+    return main()

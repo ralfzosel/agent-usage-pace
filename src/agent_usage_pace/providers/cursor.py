@@ -15,8 +15,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from usage_pace.core import UsageError, UsageWindow, finite_number, parse_instant
-from usage_pace.net import retry_delay
+from agent_usage_pace.core import UsageError, UsageWindow, finite_number, parse_instant
+from agent_usage_pace.net import retry_delay
 
 API_URL = "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage"
 ACCESS_KEY = "cursorAuth/accessToken"

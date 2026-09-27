@@ -8,8 +8,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from usage_pace import core, render
-from usage_pace.providers import codex as pace
+from agent_usage_pace import core, render
+from agent_usage_pace.providers import codex as pace
 
 NOW = datetime(2026, 9, 27, 12, tzinfo=timezone.utc)
 

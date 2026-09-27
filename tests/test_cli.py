@@ -5,8 +5,8 @@ import unittest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from usage_pace import cli
-from usage_pace.core import UsageError, UsageWindow
+from agent_usage_pace import cli
+from agent_usage_pace.core import UsageError, UsageWindow
 
 NOW = datetime(2026, 9, 27, 12, tzinfo=timezone.utc)
 WINDOW = UsageWindow("weekly", "Week", 25, timedelta(days=7), NOW + timedelta(days=3.5))

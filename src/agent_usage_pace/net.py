@@ -2,7 +2,7 @@
 
 from email.utils import parsedate_to_datetime
 
-from usage_pace.core import finite_number, utc_now
+from agent_usage_pace.core import finite_number, utc_now
 
 RATE_LIMIT_BACKOFF = 300.0
 

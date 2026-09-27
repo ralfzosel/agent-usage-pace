@@ -6,8 +6,8 @@ import urllib.error
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-from usage_pace import cli, core, net
-from usage_pace.providers import claude as pace
+from agent_usage_pace import cli, core, net
+from agent_usage_pace.providers import claude as pace
 
 NOW = datetime(2026, 9, 27, 12, tzinfo=timezone.utc)
 

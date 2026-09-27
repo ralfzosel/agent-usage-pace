@@ -1,8 +1,8 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from usage_pace import core as pace
-from usage_pace import render
+from agent_usage_pace import core as pace
+from agent_usage_pace import render
 
 NOW = datetime(2026, 9, 27, 12, tzinfo=timezone.utc)
 

@@ -12,7 +12,8 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from usage_pace.core import UsageError, UsageWindow, finite_number
+from agent_usage_pace import __version__
+from agent_usage_pace.core import UsageError, UsageWindow, finite_number
 
 
 def rpc_result(
@@ -105,7 +106,7 @@ def fetch_usage(codex: str = "codex", timeout: float = 20) -> dict[str, Any]:
                 "id": 1,
                 "method": "initialize",
                 "params": {
-                    "clientInfo": {"name": "codex-usage-pace", "version": "1.0.0"},
+                    "clientInfo": {"name": "agent-usage-pace", "version": __version__},
                 },
             },
         )

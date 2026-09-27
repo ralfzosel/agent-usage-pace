@@ -14,8 +14,8 @@ from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
-from usage_pace.core import WINDOWS, UsageError, UsageWindow, finite_number, parse_instant
-from usage_pace.net import retry_delay
+from agent_usage_pace.core import WINDOWS, UsageError, UsageWindow, finite_number, parse_instant
+from agent_usage_pace.net import retry_delay
 
 API_URL = "https://api.anthropic.com/api/oauth/usage"
 LOGIN_HINT = "Run `claude auth login` with your Claude subscription, then retry."
@@ -76,7 +76,7 @@ def fetch_usage(token: str, timeout: float = 20) -> dict[str, Any]:
             "Authorization": f"Bearer {token}",
             "anthropic-beta": "oauth-2025-04-20",
             "Accept": "application/json",
-            "User-Agent": "claude-usage-pace",
+            "User-Agent": "agent-usage-pace",
         },
     )
     try:

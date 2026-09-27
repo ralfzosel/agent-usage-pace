@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from usage_pace.core import UsageError, build_report
-from usage_pace.providers import cursor
+from agent_usage_pace.core import UsageError, build_report
+from agent_usage_pace.providers import cursor
 
 
 class CursorTests(unittest.TestCase):

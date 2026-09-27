@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agent-usage-pace"
-version = "0.1.1"
+version = "0.1.2"
 description = "Track Cursor, Claude Code, and Codex subscription usage against time elapsed."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -21,11 +21,11 @@ classifiers = [
 dependencies = []
 
 [project.scripts]
-agent-usage-pace = "usage_pace.cli:main"
-usage-pace = "usage_pace.cli:main"
-cursor-usage-pace = "usage_pace.cli:cursor_main"
-claude-usage-pace = "usage_pace.cli:claude_main"
-codex-usage-pace = "usage_pace.cli:codex_main"
+agent-usage-pace = "agent_usage_pace.cli:main"
+usage-pace = "agent_usage_pace.cli:legacy_main"
+cursor-usage-pace = "agent_usage_pace.cli:cursor_main"
+claude-usage-pace = "agent_usage_pace.cli:claude_main"
+codex-usage-pace = "agent_usage_pace.cli:codex_main"
 
 [project.urls]
 Homepage = "https://github.com/ralfzosel/agent-usage-pace"
@@ -35,7 +35,7 @@ Issues = "https://github.com/ralfzosel/agent-usage-pace/issues"
 dev = ["ruff>=0.11"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/usage_pace"]
+packages = ["src/agent_usage_pace"]
 
 [tool.ruff]
 line-length = 100

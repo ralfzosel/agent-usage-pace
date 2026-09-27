@@ -31,26 +31,26 @@ pipx install git+https://github.com/ralfzosel/agent-usage-pace.git
 
 ## Usage
 
-Both `agent-usage-pace` and the shorter `usage-pace` run the same command.
-For example, `agent-usage-pace --all` shows all three providers.
+`agent-usage-pace` is the primary command and matches the project name.
 
 ```bash
-usage-pace                 # All three providers, live in an interactive terminal
-usage-pace --all            # Same as above
-usage-pace cursor
-usage-pace claude
-usage-pace codex
-usage-pace --all --once     # One snapshot
-usage-pace codex --json     # One JSON snapshot
-usage-pace --interval 60 --tolerance 3
+agent-usage-pace                 # All three providers, live in an interactive terminal
+agent-usage-pace --all            # Same as above
+agent-usage-pace cursor
+agent-usage-pace claude
+agent-usage-pace codex
+agent-usage-pace --all --once     # One snapshot
+agent-usage-pace codex --json     # One JSON snapshot
+agent-usage-pace --interval 60 --tolerance 3
 ```
 
 The default refresh interval is **20 seconds**. Press any key to quit. Piped or
 redirected output automatically takes one snapshot. Each provider refreshes
 independently; one provider's error or rate-limit backoff does not pause the others.
 
-The package also installs `cursor-usage-pace`, `claude-usage-pace`, and
-`codex-usage-pace` as shortcuts for the corresponding provider.
+The old `usage-pace` name is retained only as a compatibility alias. The
+`cursor-usage-pace`, `claude-usage-pace`, and `codex-usage-pace` commands remain
+provider-specific compatibility shortcuts; all help text uses `agent-usage-pace`.
 
 | Provider | Authentication | Windows |
 | --- | --- | --- |
@@ -62,12 +62,12 @@ The package also installs `cursor-usage-pace`, `claude-usage-pace`, and
 
 **Cursor:** sign in to the Cursor desktop app. The script reads its local state
 database in read-only mode on macOS, Linux, or Windows. You can also set
-`CURSOR_ACCESS_TOKEN` or use `usage-pace cursor --token TOKEN`.
+`CURSOR_ACCESS_TOKEN` or use `agent-usage-pace cursor --token TOKEN`.
 
 **Claude:** run `claude auth login` with a Claude subscription. On macOS, the
 script reads the `Claude Code-credentials` Keychain entry. Elsewhere, it reads
 `$CLAUDE_CONFIG_DIR/.credentials.json`, defaulting to `~/.claude/.credentials.json`.
-Use `usage-pace claude --credentials-file PATH` for another credentials file.
+Use `agent-usage-pace claude --credentials-file PATH` for another credentials file.
 `CLAUDE_CODE_OAUTH_TOKEN` or `--token TOKEN` can supply an OAuth token with
 `user:profile` scope. An API key or inference-only token cannot read subscription
 usage. If your token expires, open Claude Code to refresh it or sign in again.
@@ -123,9 +123,9 @@ Manual snapshots never read credentials or contact a provider. Supply a reset
 timestamp within the chosen window for a meaningful pace calculation:
 
 ```bash
-usage-pace claude --usage 35 --window seven_day --resets-at '2026-10-01T12:00:00+02:00'
-usage-pace codex --usage 25 --window five_hour --resets-at '2026-09-27T16:00:00+02:00'
-usage-pace cursor --usage 40 --renew-day 10
+agent-usage-pace claude --usage 35 --window seven_day --resets-at '2026-10-01T12:00:00+02:00'
+agent-usage-pace codex --usage 25 --window five_hour --resets-at '2026-09-27T16:00:00+02:00'
+agent-usage-pace cursor --usage 40 --renew-day 10
 ```
 
 ## Development
@@ -134,14 +134,14 @@ usage-pace cursor --usage 40 --renew-day 10
 git clone https://github.com/ralfzosel/agent-usage-pace.git
 cd agent-usage-pace
 uv sync
-uv run usage-pace --help
+uv run agent-usage-pace --help
 uv run python -m unittest discover -s tests -v
 uv run ruff check .
 uv run ruff format --check .
 uv build
 ```
 
-Provider authentication and response parsing live in `src/usage_pace/providers`.
+Provider authentication and response parsing live in `src/agent_usage_pace/providers`.
 Pace calculations, rendering, terminal handling, and CLI scheduling are shared.
 Tests use synthetic fixtures and a fake local app server; no provider accounts
 or network requests are needed. CI checks supported Python versions, formatting,
