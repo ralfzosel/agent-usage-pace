@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 — 2026-09-27
+
+- Replace the live footer timestamp with a seconds countdown to the next scheduled provider check.
+
 ## 0.1.3 — 2026-09-27
 
 - Poll Claude every five minutes by default, while Cursor and Codex remain at 20 seconds; add `--claude-interval` for a separate override.

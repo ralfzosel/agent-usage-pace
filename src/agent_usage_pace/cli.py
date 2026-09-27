@@ -121,15 +121,15 @@ def run_live(states: dict[str, ProviderState], args: argparse.Namespace) -> None
     try:
         while True:
             collect(states, args)
+            delay = max(0.0, min(state.retry_at for state in states.values()) - time.monotonic())
             sys.stdout.write(
                 f"\x1b[H\x1b[2J{render_human(make_snapshot(states, args))}\n\n"
                 f"{refresh_status(states, args)} — press any key to quit "
-                f"(updated {datetime.now():%H:%M:%S})"
+                f"(next update in {math.ceil(delay)} seconds)"
             )
             sys.stdout.flush()
-            delay = max(0.05, min(state.retry_at for state in states.values()) - time.monotonic())
             # Redraw countdowns without fetching providers before their scheduled time.
-            if wait_for_key_or_timeout(min(delay, 1.0)):
+            if wait_for_key_or_timeout(max(0.05, min(delay, 1.0))):
                 break
     finally:
         sys.stdout.write("\x1b[?25h\x1b[?1049l")
