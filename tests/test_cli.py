@@ -15,15 +15,46 @@ WINDOW = UsageWindow("weekly", "Week", 25, timedelta(days=7), NOW + timedelta(da
 class CliTests(unittest.TestCase):
     def test_default_interval_and_provider_selection(self):
         self.assertEqual(cli.parse_args([]).interval, 20)
+        self.assertEqual(cli.parse_args([]).claude_interval, 300)
         self.assertIsNone(cli.parse_args([]).provider)
         self.assertEqual(cli.parse_args(["codex"]).provider, "codex")
         self.assertTrue(cli.parse_args(["--all"]).all)
+
+    def test_interval_overrides(self):
+        args = cli.parse_args(["--interval", "60"])
+        self.assertEqual(cli.provider_interval("codex", args), 60)
+        self.assertEqual(cli.provider_interval("claude", args), 60)
+        args = cli.parse_args(["--interval", "30", "--claude-interval", "600"])
+        self.assertEqual(cli.provider_interval("cursor", args), 30)
+        self.assertEqual(cli.provider_interval("claude", args), 600)
+
+    def test_default_refresh_schedule_is_provider_specific(self):
+        states = {name: cli.ProviderState() for name in cli.PROVIDERS}
+        args = cli.parse_args([])
+        with (
+            patch.object(cli.time, "monotonic", return_value=100),
+            patch.object(cli.claude, "fetch", return_value=[WINDOW]),
+            patch.object(cli.cursor, "fetch", return_value=[WINDOW]),
+            patch.object(cli.codex, "fetch", return_value=[WINDOW]),
+        ):
+            cli.collect(states, args)
+        self.assertEqual(states["claude"].retry_at, 400)
+        self.assertEqual(states["cursor"].retry_at, 120)
+        self.assertEqual(states["codex"].retry_at, 120)
+        self.assertEqual(
+            cli.refresh_status(states, args), "Refresh: Cursor 20s, Claude 300s, Codex 20s"
+        )
+        self.assertEqual(
+            cli.refresh_status({"claude": states["claude"]}, args), "Refreshing every 300s"
+        )
 
     def test_invalid_arguments(self):
         for args in [
             ["codex", "--all"],
             ["--interval", "nan"],
             ["--timeout", "0"],
+            ["--claude-interval", "nan"],
+            ["--claude-interval", "0"],
             ["--tolerance", "-1"],
             ["--renew-day", "29"],
             ["--token", "example"],
@@ -116,6 +147,42 @@ class CliTests(unittest.TestCase):
         with patch.object(cli.codex, "fetch", return_value=[WINDOW]):
             cli.collect(states, cli.parse_args(["codex"]))
         self.assertIsNone(states["codex"].error)
+
+    def test_footer_describes_paused_providers(self):
+        args = cli.parse_args([])
+        failed = cli.ProviderState(error="Rate limited")
+        self.assertEqual(
+            cli.refresh_status({"claude": failed}, args), "Waiting for provider retries"
+        )
+        self.assertEqual(
+            cli.refresh_status({"claude": failed, "codex": cli.ProviderState()}, args),
+            "Other providers refresh every 20s",
+        )
+        self.assertEqual(
+            cli.refresh_status({"codex": cli.ProviderState()}, args), "Refreshing every 20s"
+        )
+
+    def test_live_countdown_redraw_does_not_retry_early(self):
+        output = io.StringIO()
+        args = cli.parse_args(["claude"])
+        states = {"claude": cli.ProviderState()}
+        with (
+            patch.object(cli.time, "monotonic", return_value=100),
+            patch.object(
+                cli.claude,
+                "fetch",
+                side_effect=UsageError("Claude usage API is rate limited.", 300),
+            ) as fetch,
+            patch.object(cli, "wait_for_key_or_timeout", side_effect=[False, True]) as wait,
+            contextlib.redirect_stdout(output),
+        ):
+            cli.run_live(states, args)
+        fetch.assert_called_once()
+        self.assertEqual(wait.call_count, 2)
+        self.assertTrue(all(call.args == (1.0,) for call in wait.call_args_list))
+        self.assertIn("Waiting for provider retries", output.getvalue())
+        self.assertNotIn("Refreshing every 20s", output.getvalue())
+        self.assertEqual(output.getvalue().count("Retrying in 300s"), 2)
 
     def test_live_interrupt_restores_terminal(self):
         output = io.StringIO()

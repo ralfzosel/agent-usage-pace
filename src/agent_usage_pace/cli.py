@@ -28,6 +28,8 @@ from agent_usage_pace.providers import claude, codex, cursor
 from agent_usage_pace.render import render_windows
 from agent_usage_pace.terminal import wait_for_key_or_timeout
 
+DEFAULT_CLAUDE_INTERVAL = 300.0
+
 PROVIDERS = {"cursor": cursor, "claude": claude, "codex": codex}
 TITLES = {"cursor": "Cursor", "claude": "Claude (shared with Claude apps)", "codex": "Codex"}
 
@@ -40,6 +42,10 @@ class ProviderState:
     retry_at: float = 0
 
 
+def provider_interval(name: str, args: argparse.Namespace) -> float:
+    return args.claude_interval if name == "claude" else args.interval
+
+
 def collect(states: dict[str, ProviderState], args: argparse.Namespace) -> None:
     due = [name for name, state in states.items() if state.retry_at <= time.monotonic()]
     if not due:
@@ -48,7 +54,7 @@ def collect(states: dict[str, ProviderState], args: argparse.Namespace) -> None:
         futures = {executor.submit(PROVIDERS[name].fetch, args): name for name in due}
         for future in as_completed(futures):
             state = states[futures[future]]
-            delay = args.interval
+            delay = provider_interval(futures[future], args)
             try:
                 state.windows = future.result()
                 state.fetched_at = utc_now()
@@ -97,6 +103,19 @@ def render_human(data: dict[str, Any]) -> str:
     return "\n\n".join(sections)
 
 
+def refresh_status(states: dict[str, ProviderState], args: argparse.Namespace) -> str:
+    healthy = [name for name, state in states.items() if state.error is None]
+    if not healthy:
+        return "Waiting for provider retries"
+    intervals = {provider_interval(name, args) for name in healthy}
+    if len(intervals) == 1:
+        prefix = "Other providers refresh" if len(healthy) < len(states) else "Refreshing"
+        return f"{prefix} every {intervals.pop():g}s"
+    return "Refresh: " + ", ".join(
+        f"{name.title()} {provider_interval(name, args):g}s" for name in healthy
+    )
+
+
 def run_live(states: dict[str, ProviderState], args: argparse.Namespace) -> None:
     sys.stdout.write("\x1b[?1049h\x1b[?25l")
     try:
@@ -104,12 +123,13 @@ def run_live(states: dict[str, ProviderState], args: argparse.Namespace) -> None
             collect(states, args)
             sys.stdout.write(
                 f"\x1b[H\x1b[2J{render_human(make_snapshot(states, args))}\n\n"
-                f"Refreshing every {args.interval:g}s — press any key to quit "
+                f"{refresh_status(states, args)} — press any key to quit "
                 f"(updated {datetime.now():%H:%M:%S})"
             )
             sys.stdout.flush()
             delay = max(0.05, min(state.retry_at for state in states.values()) - time.monotonic())
-            if wait_for_key_or_timeout(delay):
+            # Redraw countdowns without fetching providers before their scheduled time.
+            if wait_for_key_or_timeout(min(delay, 1.0)):
                 break
     finally:
         sys.stdout.write("\x1b[?25h\x1b[?1049l")
@@ -133,8 +153,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--interval",
         type=float,
-        default=DEFAULT_INTERVAL,
-        help=f"live refresh seconds (default: {DEFAULT_INTERVAL:g})",
+        default=None,
+        help="override refresh seconds for all providers (defaults: Cursor/Codex 20, Claude 300)",
+    )
+    parser.add_argument(
+        "--claude-interval",
+        type=float,
+        help="Claude refresh seconds (default: 300, or --interval when supplied)",
     )
     parser.add_argument(
         "--tolerance",
@@ -167,9 +192,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(argv)
     if args.provider and args.all:
         parser.error("choose a provider or --all, not both")
-    for name in ("interval", "timeout"):
+    if args.claude_interval is None:
+        args.claude_interval = (
+            args.interval if args.interval is not None else DEFAULT_CLAUDE_INTERVAL
+        )
+    if args.interval is None:
+        args.interval = DEFAULT_INTERVAL
+    for name in ("interval", "claude_interval", "timeout"):
         if not math.isfinite(getattr(args, name)) or getattr(args, name) <= 0:
-            parser.error(f"--{name} must be finite and positive")
+            parser.error(f"--{name.replace('_', '-')} must be finite and positive")
     if not math.isfinite(args.tolerance) or not 0 <= args.tolerance <= 100:
         parser.error("--tolerance must be between 0 and 100")
     if not 1 <= args.renew_day <= 28:

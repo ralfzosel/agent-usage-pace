@@ -44,9 +44,16 @@ agent-usage-pace codex --json     # One JSON snapshot
 agent-usage-pace --interval 60 --tolerance 3
 ```
 
-The default refresh interval is **20 seconds**. Press any key to quit. Piped or
-redirected output automatically takes one snapshot. Each provider refreshes
-independently; one provider's error or rate-limit backoff does not pause the others.
+Default refresh intervals are **20 seconds for Cursor and Codex** and **5 minutes
+for Claude**, whose usage endpoint can throttle frequent polling. Press any key
+to quit. Piped or redirected output automatically takes one snapshot. Each
+provider refreshes independently; one provider's error or rate-limit backoff does
+not pause the others. The display updates countdowns every second without making
+extra API requests.
+
+`--interval SECONDS` explicitly overrides all providers; `--claude-interval SECONDS`
+can set Claude separately. For example, `--interval 20 --claude-interval 600`
+checks Cursor/Codex every 20 seconds and Claude every 10 minutes.
 
 The old `usage-pace` name is retained only as a compatibility alias. The
 `cursor-usage-pace`, `claude-usage-pace`, and `codex-usage-pace` commands remain

@@ -92,9 +92,7 @@ def fetch_usage(token: str, timeout: float = 20) -> dict[str, Any]:
             ) from exc
         if exc.code == 429:
             delay = retry_delay(exc.headers.get("Retry-After"))
-            raise UsageError(
-                f"Claude usage API is rate limited. Retry in {delay:g}s.", delay
-            ) from exc
+            raise UsageError("Claude usage API is rate limited.", delay) from exc
         raise UsageError(f"Claude usage request failed with HTTP {exc.code}.") from exc
     except (urllib.error.URLError, OSError) as exc:
         raise UsageError(

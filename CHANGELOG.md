@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 — 2026-09-27
+
+- Poll Claude every five minutes by default, while Cursor and Codex remain at 20 seconds; add `--claude-interval` for a separate override.
+- Show paused-provider status during rate-limit backoff and update retry countdowns without extra API calls.
+- Remove duplicate, stale retry durations from HTTP error messages.
+
 ## 0.1.2 — 2026-09-27
 
 - Make `agent-usage-pace` the canonical command in help, documentation, provider client identification, and local wrappers.
