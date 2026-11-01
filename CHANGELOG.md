@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-01
+
 - Renew an expired Claude Code access token automatically: the Claude provider lets Claude Code refresh its own login (`claude plugin list`, no model call) and retries once, instead of stopping with "access token has expired".
 
 ## 0.1.4 — 2026-09-27

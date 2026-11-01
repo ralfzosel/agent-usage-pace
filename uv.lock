@@ -1,10 +1,10 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 
 [[package]]
 name = "agent-usage-pace"
-version = "0.1.4"
+version = "0.2.0"
 source = { editable = "." }
 
 [package.dev-dependencies]

@@ -1,17 +1,29 @@
 [build-system]
-requires = ["hatchling>=1.27"]
+requires = [
+    "hatchling>=1.27",
+]
 build-backend = "hatchling.build"
 
 [project]
 name = "agent-usage-pace"
-version = "0.1.4"
+version = "0.2.0"
 description = "Track Cursor, Claude Code, and Codex subscription usage against time elapsed."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-license-files = ["LICENSE"]
-authors = [{name = "Ralf Zosel"}]
-keywords = ["cursor", "claude-code", "codex", "usage", "terminal"]
+license-files = [
+    "LICENSE",
+]
+authors = [
+    { name = "Ralf Zosel" },
+]
+keywords = [
+    "cursor",
+    "claude-code",
+    "codex",
+    "usage",
+    "terminal",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
@@ -32,14 +44,24 @@ Homepage = "https://github.com/ralfzosel/agent-usage-pace"
 Issues = "https://github.com/ralfzosel/agent-usage-pace/issues"
 
 [dependency-groups]
-dev = ["ruff>=0.11"]
+dev = [
+    "ruff>=0.11",
+]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/agent_usage_pace"]
+packages = [
+    "src/agent_usage_pace",
+]
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E4", "E7", "E9", "F", "I"]
+select = [
+    "E4",
+    "E7",
+    "E9",
+    "F",
+    "I",
+]
