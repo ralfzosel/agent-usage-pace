@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -19,6 +20,15 @@ from agent_usage_pace.net import retry_delay
 
 API_URL = "https://api.anthropic.com/api/oauth/usage"
 LOGIN_HINT = "Run `claude auth login` with your Claude subscription, then retry."
+# Any Claude Code command that loads the login renews an expired access token and
+# writes it back to its own storage; `plugin list` does so without a model call
+# (checked with Claude Code 2.1.308; `claude auth status` does not renew).
+RENEW_COMMAND = ("plugin", "list")
+RENEW_TIMEOUT = 60
+
+
+class TokenExpired(UsageError):
+    """The saved Claude Code access token has passed its expiry time."""
 
 
 def token_from_credentials(raw: str) -> str:
@@ -32,7 +42,7 @@ def token_from_credentials(raw: str) -> str:
         raise UsageError("Claude Code has no saved subscription access token. " + LOGIN_HINT)
     expires = finite_number(oauth.get("expiresAt"))
     if expires is not None and expires <= time.time() * 1000:
-        raise UsageError(
+        raise TokenExpired(
             "Claude Code's access token has expired. Open Claude Code to refresh "
             "its login, or run `claude auth login`, then retry."
         )
@@ -167,5 +177,29 @@ def parse_windows(payload: dict[str, Any]) -> list[UsageWindow]:
     return windows
 
 
+def renew_login() -> bool:
+    """Let Claude Code renew its own expired token; never touch its storage here."""
+    executable = shutil.which("claude")
+    if not executable:
+        return False
+    try:
+        result = subprocess.run(
+            [executable, *RENEW_COMMAND],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            timeout=RENEW_TIMEOUT,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
 def fetch(args: argparse.Namespace) -> list[UsageWindow]:
-    return parse_windows(fetch_usage(read_access_token(args), args.timeout))
+    try:
+        token = read_access_token(args)
+    except TokenExpired:
+        # Only Claude Code's own storage is renewed; a credentials file stays as given.
+        if args.credentials_file or not renew_login():
+            raise
+        token = read_access_token(args)
+    return parse_windows(fetch_usage(token, args.timeout))
