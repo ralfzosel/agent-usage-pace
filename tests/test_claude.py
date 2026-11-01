@@ -137,6 +137,73 @@ class AuthAndHttpTests(unittest.TestCase):
             if code == 429:
                 self.assertEqual(result.exception.retry_after, 600)
 
+    def test_expired_token_is_renewed_by_claude_code_once(self):
+        expired = pace.TokenExpired("expired")
+        payload = {"five_hour": {"utilization": 5}}
+        with (
+            patch.object(pace, "read_access_token", side_effect=[expired, "fresh"]) as read,
+            patch.object(pace, "renew_login", return_value=True) as renew,
+            patch.object(pace, "fetch_usage", return_value=payload) as fetch_usage,
+        ):
+            windows = pace.fetch(parse_args([]))
+        self.assertEqual(renew.call_count, 1)
+        self.assertEqual(read.call_count, 2)
+        self.assertEqual(fetch_usage.call_args.args[0], "fresh")
+        self.assertEqual(windows[0].percent, 5)
+
+    def test_expired_token_stays_an_error_when_renewal_fails(self):
+        expired = pace.TokenExpired("expired")
+        for renewed, reads in [(False, [expired]), (True, [expired, expired])]:
+            with (
+                self.subTest(renewed=renewed),
+                patch.object(pace, "read_access_token", side_effect=reads),
+                patch.object(pace, "renew_login", return_value=renewed),
+                patch.object(pace, "fetch_usage") as fetch_usage,
+                self.assertRaises(pace.TokenExpired),
+            ):
+                pace.fetch(parse_args([]))
+            fetch_usage.assert_not_called()
+
+    def test_credentials_file_is_never_renewed(self):
+        with (
+            patch.object(pace, "read_access_token", side_effect=pace.TokenExpired("expired")),
+            patch.object(pace, "renew_login") as renew,
+            self.assertRaises(pace.TokenExpired),
+        ):
+            pace.fetch(parse_args(["--credentials-file", "/nonexistent.json"]))
+        renew.assert_not_called()
+
+    def test_renew_login_runs_claude_code_without_input(self):
+        done = pace.subprocess.CompletedProcess([], 0)
+        with (
+            patch.object(pace.shutil, "which", return_value="/bin/claude"),
+            patch.object(pace.subprocess, "run", return_value=done) as run,
+        ):
+            self.assertTrue(pace.renew_login())
+        self.assertEqual(run.call_args.args[0], ["/bin/claude", "plugin", "list"])
+        self.assertIs(run.call_args.kwargs["stdin"], pace.subprocess.DEVNULL)
+        self.assertEqual(run.call_args.kwargs["timeout"], pace.RENEW_TIMEOUT)
+
+    def test_renew_login_failures_return_false(self):
+        with patch.object(pace.shutil, "which", return_value=None):
+            self.assertFalse(pace.renew_login())
+        for outcome in [
+            pace.subprocess.TimeoutExpired("claude", 60),
+            OSError("missing"),
+            pace.subprocess.CompletedProcess([], 1),
+        ]:
+            run = (
+                {"side_effect": outcome}
+                if isinstance(outcome, Exception)
+                else {"return_value": outcome}
+            )
+            with (
+                self.subTest(outcome=type(outcome).__name__),
+                patch.object(pace.shutil, "which", return_value="/bin/claude"),
+                patch.object(pace.subprocess, "run", **run),
+            ):
+                self.assertFalse(pace.renew_login())
+
     def test_retry_after_dates_and_invalid_headers(self):
         with patch.object(net, "utc_now", return_value=NOW):
             self.assertEqual(pace.retry_delay("Sun, 27 Sep 2026 12:10:00 GMT"), 600)

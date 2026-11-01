@@ -77,7 +77,11 @@ script reads the `Claude Code-credentials` Keychain entry. Elsewhere, it reads
 Use `agent-usage-pace claude --credentials-file PATH` for another credentials file.
 `CLAUDE_CODE_OAUTH_TOKEN` or `--token TOKEN` can supply an OAuth token with
 `user:profile` scope. An API key or inference-only token cannot read subscription
-usage. If your token expires, open Claude Code to refresh it or sign in again.
+usage. Claude Code's access token lasts about eight hours. When the saved one
+has expired, the script runs `claude plugin list` once, which makes Claude Code
+renew its own login without a model call, and reads the token again. If that
+fails, or the login was revoked, run `claude auth login`. A `--credentials-file`
+is never renewed.
 
 **Codex:** install the Codex CLI and run `codex login` with ChatGPT. The script
 starts a private app-server helper and calls
